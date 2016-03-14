@@ -1,0 +1,99 @@
+---
+layout: post
+title:  "A Dress That Wants to Dance"
+date:   2016-03-13 22:00:00
+---
+
+I found some conductive fabric in a drawer one day and started thinking about using it in a sewing project. The (eventual) result was a dress with hidden capacitive sensors and Arduino-controlled LEDs. 
+
+<!--more-->
+
+![Dress on Hanger]({{site.url}}/assets/20160313/dress_on_hanger.jpg)
+
+I started with a simple dress pattern and modified it to use two layers: black lace over a grey lining, trying to match the colour of the conductive fabric as closely as possible. I used a hand applique stitch to sew squares of conductive fabric onto the lining bodice at the waist and shoulders, so that it would be obscured under the lace layer when the bodice was complete. These will become the basis for the capacitive sensors.
+
+![Bodice with Conductive Fabric]({{site.url}}/assets/20160313/bodice.jpg)
+
+Once the dress was finished, I could start working on the circuit. The whole thing is controlled by a Lilypad Arduino and the conductive fabric patches are connected to their respective pins (or each other) with conductive thread. Each capacitive sensor also needs a resistor, which controls the sensitivity of the sensor, and these hard components are connected to the soft circuit using metal fabric snaps. Finally, two strings of addressable RGB LEDs (WS2811) were labouriously sewn into the skirt
+
+![Soft Circuit]({{site.url}}/assets/20160313/circuit.jpg)
+![Skirt with LEDs]({{site.url}}/assets/20160313/skirt_underside.jpg)
+
+The code is fairly simple. I'm making use of two very useful libraries: FastLED and CapactiveSensor. CapacitiveSensor takes two connected pins, toggles the output of one pin and records the time it takes to receive the same signal from the other pin; a longer wait indicates higher capacitance across the two pins. In this sketch, if any of the sensors are above a threshold, we animate a random set of LEDs. The threshold is set so that the sensors should only respond to direct contact and not to the person currently wearing the dress. (This can be finicky)
+
+	#include <FastLED.h>
+	#include <CapacitiveSensor.h>
+	#define NUM_LEDS 100
+	#define RANDOM_LEDS 20
+	#define THRESHOLD 1000
+
+	CRGB leds[NUM_LEDS];
+	CapacitiveSensor waist_left = CapacitiveSensor(13,12);
+	CapacitiveSensor shoulder_left = CapacitiveSensor(11,10);
+	CapacitiveSensor shoulder_right = CapacitiveSensor(9,8);
+	CapacitiveSensor waist_right = CapacitiveSensor(6,7);
+
+	void setup() { 
+	  FastLED.addLeds<NEOPIXEL, 3>(leds, NUM_LEDS);
+	}
+
+	void loop(){
+	  static uint8_t fadeIn[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+	  static uint8_t fadeOut[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+	  static long loop_counter = 0;
+	  static uint8_t saturation = 250;
+	  static uint8_t hue = 175;
+	  static uint8_t max_value = 128;
+	  long cap1 = 0;
+	  long cap2 = 0;
+	  long cap3 = 0;
+	  long cap4 = 0;
+	  
+	  for (int i=0; i<RANDOM_LEDS; i++){
+	    fadeIn[i] = random(0, NUM_LEDS);
+	  }
+	  uint8_t angle = 0;
+	  while (angle <= max_value){
+	    cap1 =  waist_left.capacitiveSensor(30);
+	    cap2 =  shoulder_left.capacitiveSensor(30);
+	    cap3 =  shoulder_right.capacitiveSensor(30);
+	    cap4 =  waist_right.capacitiveSensor(30);
+	    loop_counter++;
+	    
+	    if (cap1 > THRESHOLD  || cap2 > THRESHOLD || cap3 > THRESHOLD || cap4 > THRESHOLD){
+	      angle = angle + 8;
+	      for (int i=0; i<RANDOM_LEDS; i++){
+	        leds[fadeIn[i]].setHSV(hue,saturation,cos8(128-angle));
+	        leds[fadeOut[i]].setHSV(hue,saturation,cos8(angle+(128-max_value)));
+	      }
+	    } else {
+	      angle = 0;
+	      for (int i=0; i<RANDOM_LEDS; i++){
+	        leds[fadeIn[i]].setHSV(hue,saturation,0);
+	        leds[fadeOut[i]].setHSV(hue,saturation,0);
+	      }
+	    }
+	    FastLED.show();
+	    delay(10);
+	  }
+	  for (int i=0; i<RANDOM_LEDS; i++){
+	    fadeOut[i] = fadeIn[i];
+	  }
+	  if (loop_counter >= 2500) {
+	     loop_counter = 0;
+	     waist_left.reset_CS_AutoCal();
+	     shoulder_left.reset_CS_AutoCal();
+	     shoulder_right.reset_CS_AutoCal();
+	     waist_right.reset_CS_AutoCal();  
+	  }
+	}
+
+The power supply lives in a pouch on the wearer's leg. This particular piece was made in a rush (I was trying to finish in time for an event) and uses a battery behind a basic 5V regulator. A card tin holds the components and serves as a much-needed heat sink. At some point I plan to replace the existing regulator with a high-efficiency version.
+
+![Battery and Regulator]({{site.url}}/assets/20160313/battery_and_reg.jpg)
+![Power Supply in Card Tin]({{site.url}}/assets/20160313/power_supply.jpg)
+![Power Supply in Pouch]({{site.url}}/assets/20160313/power_supply_pouch.jpg)
+
+The finished product is a dress made for dancing. Now if only I knew how to dance.
+
+![Dancing]({{site.url}}/assets/20160313/dressdemo.gif)
