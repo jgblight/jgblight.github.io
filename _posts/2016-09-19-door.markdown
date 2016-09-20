@@ -1,0 +1,106 @@
+---
+layout: post
+title:  "The Dramatic Entrance Machine"
+date:   2016-09-19 23:30:00
+---
+
+Some friends and I attended a certain gathering in the desert recently and one of the things we brought with us was a pair of saloon doors. Y'know, typical desert camping gear. A few weeks before we left, someone mentioned that the doors used to have a motion-activated speaker that was meant to play a random sound whenever someone entered, but it was removed because it gave too many false positives. I thought, "A reed switch might be better suited for that," then I started looking at reed switches, then I started looking at how to play sound files from an Arduino, and now here we are.
+
+<!--more-->
+
+The reed switch itself was dead simple. It consists of two magnets to be installed on either side of the door. The switch is off when the magnets are within half an inch or so of each other and on when they move farther apart. It connects to a pin on the Arduino. Dead. Simple.
+
+The audio was also simple. I bought an MP3 player shield from Sparkfun, being fairly confident that it would do everything I needed and then some. Namely, it takes an SD card full of audio files, it accepts a standard audio jack, and it has a simple library associated with it. The jack was especially important to me because I definitely did not have time to [mess around with DIY speakers again]({{site.url}}/2015/10/10/i-made-speakers.html). 
+
+Weird caveat with the audio jack, though: because the shield is designed to work with headphones out of the box, the reference voltage on the audio jack is not actually ground. [Sparkfun has a guide](https://learn.sparkfun.com/tutorials/mp3-player-shield-hookup-guide-v15) that explains this in greater detail, but the gist is: 
+  - It works fine for headphones
+  - It works fine for external speakers as long as they're self-powered
+  - Messing around with DIY speakers now involves slightly more messing around
+  - Never, ever, ever, ever let the "not-ground" on the headphone jack connect back to the actual ground on the Arduino. This will break everything. Badly.
+
+This was fine for my purposes, since I wanted to just hook up external speakers anyway. The only requirement was that the speakers should have a separate power source. I even got to use the pathetic speakers that I made last year since they were a) battery-powered, b) small and c) I don't care what happens to them.
+
+![My desk, mid-project]({{site.url}}/assets/20160919/messy_desk.jpg)
+
+Then there was the issue of power. The nature of desert camping meant that I wouldn't have a reliable power source to plug into so I simply resorted to "bring lots of batteries." I put a 9-volt battery behind a high-efficiency regulator (the one I bought for [my LED dress]({{site.url}}/2016/03/13/a-dress.html)) and called it a day. In an attempt to conserve power, I also added a relay between the battery terminals on the speakers, so that I could turn the speakers off when I didn't need then while still keeping them on a separate circuit.
+
+![Relay wired between battery terminals]({{site.url}}/assets/20160919/relay.jpg)
+
+The full code is below. The reed switch is on pin 5 and the relay is on pin 10. On each loop we check if the door has just opened and, if so, select a random file and play it.
+
+	#include <SPI.h>
+	#include <SdFat.h>
+	#include <SdFatUtil.h> 
+	#include <SFEMP3Shield.h>
+
+	SdFat sd;
+	SFEMP3Shield MP3player;
+	uint16_t fileCount;
+	int previousDoor;
+	int door;
+
+	void setup() {
+
+	  randomSeed(analogRead(0));
+	  pinMode(5, INPUT_PULLUP);
+	  pinMode(10, OUTPUT);
+
+	  digitalWrite(10, LOW);
+
+	  //start the shield
+	  sd.begin(SD_SEL, SPI_FULL_SPEED);
+
+	  //count files
+	  SdFile file;
+	  char filename[13];
+	  sd.chdir("/",true);
+	  fileCount = 1;
+	  while (file.openNext(sd.vwd(),O_READ))
+	  {
+	    file.getFilename(filename);
+	    if ( isFnMusic(filename) ) {
+	      fileCount++;
+	    }
+	    file.close();
+	  }
+
+	  
+	  MP3player.begin();
+	  MP3player.setVolume(0,0); //loudest
+
+	  previousDoor = 0;
+	  door = 0;
+	}
+
+	void loop() {
+
+	  door = digitalRead(5);
+
+	  if (door == HIGH and previousDoor == LOW and !MP3player.isPlaying()){
+	    long randomSong = random(1, fileCount);
+	    digitalWrite(10, HIGH);
+	    delay(20);
+	    MP3player.playTrack(randomSong);
+	    while (MP3player.isPlaying()) {
+	      delay(100);
+	    }
+	    digitalWrite(10, LOW);
+	  }
+
+	  previousDoor = door;
+	  delay(200);
+
+	}
+
+To protect them from the elements, most of the components were stored in plastic pencil cases, which were screwed directly to the door frame.
+
+![Project packaged into cases]({{site.url}}/assets/20160919/plastic_cases.jpg)
+
+{:refdef: style="text-align: center;"}
+![Project taped to saloon doors]({{site.url}}/assets/20160919/sensors_on_door.jpg){:class="image-group"}
+![Finished saloon doors]({{site.url}}/assets/20160919/door_finished.jpg){:class="image-group"}
+{:refdef}
+
+And it works!
+
+Well, mostly. Predictably, the speakers were a little too quiet and had to be swapped out with another set that we had on hand. The battery also didn't last long and had to be changed frequently. (I never bothered to time it. It was more than a few hours but definitely not a full day.) Most importantly, the saloon doors are supposed to have hinges that swing shut after they've been opened, but between the wind, the dust and the posts not being quite straight, the doors never really closed by themselves. Still, during times when we had lots of people visiting, we would send someone to stand by the door and usher people through it, manually closing the door behind them. It became a fun way to entertain the guests.
