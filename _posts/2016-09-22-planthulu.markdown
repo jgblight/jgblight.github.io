@@ -4,7 +4,7 @@ title:  "The Rise of Plant-thulu"
 date:   2016-09-22 22:00:00
 ---
 
-![Finished Plant-thulu](/assets/20160922/finished.gif)
+![Finished Plant-thulu]({{site.url}}/assets/20160922/finished.gif)
 
 <!--more-->
 
@@ -13,8 +13,8 @@ date:   2016-09-22 22:00:00
 {:refdef}
 
 {:refdef: style="text-align: center;"}
-![Finger and Servo](/assets/20160922/progress1.jpg){:class="image-group-small"}
-![Added Tentacle "Finger Puppet"](/assets/20160922/progress2.jpg){:class="image-group-small"}
-![Added More Tentacles](/assets/20160922/progress3.jpg){:class="image-group-small"}
+![Finger and Servo]({{site.url}}/assets/20160922/progress1.jpg){:class="image-group-small"}
+![Added Tentacle "Finger Puppet"]({{site.url}}/assets/20160922/progress2.jpg){:class="image-group-small"}
+![Added More Tentacles]({{site.url}}/assets/20160922/progress3.jpg){:class="image-group-small"}
 {:refdef}
 
