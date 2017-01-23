@@ -22,7 +22,7 @@ This was fine for my purposes, since I wanted to just hook up external speakers 
 
 ![My desk, mid-project]({{site.url}}/assets/20160919/messy_desk.jpg)
 
-Then there was the issue of power. The nature of desert camping meant that I wouldn't have a reliable power source to plug into so I simply resorted to "bring lots of batteries." I put a 9-volt battery behind a high-efficiency regulator (the one I bought for [my LED dress]({{site.url}}/2016/03/13/a-dress.html)) and called it a day. In an attempt to conserve power, I also added a relay between the battery terminals on the speakers, so that I could turn the speakers off when I didn't need then while still keeping them on a separate circuit.
+Then, there was the issue of power. The nature of desert camping meant that I wouldn't have a reliable power source to plug into so I simply resorted to "bring lots of batteries." I put a 9-volt battery behind a high-efficiency regulator (the one I bought for [my LED dress]({{site.url}}/2016/03/13/a-dress.html)) and called it a day. In an attempt to conserve power, I also added a relay between the battery terminals on the speakers, so that I could turn the speakers off when I didn't need then while still keeping them on a separate circuit.
 
 ![Relay wired between battery terminals]({{site.url}}/assets/20160919/relay.jpg)
 

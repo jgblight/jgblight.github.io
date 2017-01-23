@@ -1,0 +1,172 @@
+---
+layout: post
+title:  "Killing Me Softly with Keyboard Input"
+date:   2017-01-21 7:00:00
+---
+
+I am, for the most part, not here to get into unwinnable debates. Some decisions are kind of arbitrary. Sometimes you go along with convention because that's what is familiar. Sometimes you just have to forge your own path. So I am not going to spend time justfying why I put the tab bar on the bottom of an Android app instead of the top. Suffice to say, I wanted to do it and I did it and so can you.
+
+<!--more-->
+
+I'm not alone in this decision. I know this because there's a [Material Design spec](https://material.io/guidelines/components/bottom-navigation.html#bottom-navigation-specs) for this exact thing. It's mostly what you would expect: block colours, not too cluttered, etc. But then there's one comment towards the end...
+
+*"Bottom sheets, navigation drawers, and keyboards appear in front of the bottom navigation bar, temporarily covering it."*
+
+Seems reasonable, just hide that view when the keyboard is visible.
+
+Wait....
+
+You can't. You have no information about what the keyboard is doing. How is that supposed to work?
+
+### The Android Manifest
+
+So the official way to customize any keyboard-related behaviour is by setting `windowSoftInputMode` in the Android Manifest. There are ~~two~~ three options here:
+
+`adjustResize`: This is not what you want. At least, not here. This squashes all the squashable elements in the window so that everything still fits, which is normally exactly what you want, but it does nothing to hide the tab bar.
+
+{:refdef: style="text-align: center;"}
+![adjustResize](/assets/20170122/adjustResize1.gif){:class="image-group-small"}
+![adjustResize](/assets/20170122/adjustResize2.gif){:class="image-group-small"}
+{:refdef}
+
+`adjustPan`: This keeps everything the same size and pans the layout so that the focused element is somewhere above the keyboard. This will probably hide the tab bar; it will probably hide other parts of your layout as well. You may not want to have those parts of your layout hidden depending on what they are, in which case this is not optimal. 
+
+{:refdef: style="text-align: center;"}
+![adjustPan](/assets/20170122/adjustPan1.gif){:class="image-group-small"}
+![adjustPan](/assets/20170122/adjustPan2.gif){:class="image-group-small"}
+{:refdef}
+
+`adjustNothing`: This is not a documented option but I promise it exists and it does exactly what you think it does. The window does not change at all here and the keyboard appears on top of it. This will definitely hide the tab bar and will probably hide whatever is directly above the tab bar; even if that thing is the text field you are currently editing. Depending on your layout, this might be the same, better, or worse than `adjustPan`.
+
+{:refdef: style="text-align: center;"}
+![adjustNothing](/assets/20170122/adjustNothing1.gif){:class="image-group-small"}
+![adjustNothing](/assets/20170122/adjustNothing2.gif){:class="image-group-small"}
+{:refdef}
+
+Hopefully either `adjustPan` or `adjustNothing` is sufficient for you and if one of them is, I highly suggest you use it and get on with your life, because your other options are not pretty. But what if you want to hide the tab bar AND resize the rest of the layout?
+
+### The Magic Number Method
+Searching for a better solution, I did manage to find [this StackOverflow answer](http://stackoverflow.com/a/4737265). This method simply assumes that if the main view is shortened by a totally arbitrary number of pixels, the keyboard must be present. It works fine in spite of the magic number except...
+
+{:refdef: style="text-align: center;"}
+![Magic Number Method](/assets/20170122/magicNumber1.gif){:class="image-group-small"}
+![Magic Number Keyboard Up](/assets/20170122/mnscreenup.gif){:class="image-group-small"}
+![Magic Number Keyboard Down](/assets/20170122/mnscreendown.gif){:class="image-group-small"}
+{:refdef}
+
+Do you see it? DO YOU SEE IT?!?!
+
+I had been calling `setVisibility(GONE)` to hide the tab bar and the update is just a liiittle bit too slow; the tab bar is visible as the keyboard is withdrawing. Obviously, this will not stand.
+
+### The RelativeLayout Method
+
+My eventual solution relies on the equivalent of a CSS hack. The layout for the main activity looks some like this:
+
+	<?xml version="1.0" encoding="utf-8"?>
+	<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	    xmlns:app="http://schemas.android.com/apk/res-auto"
+	    android:id="@+id/activity_main"
+	    android:fitsSystemWindows="true"
+	    android:layout_width="match_parent" android:layout_height="match_parent">
+
+	    <android.support.design.widget.TabLayout
+	        android:id="@+id/tabs"
+	        android:layout_width="match_parent"
+	        android:layout_height="60dp"
+	        android:layout_alignParentBottom="true"
+	        android:background="@color/colorPrimary"
+	        app:tabTextColor="@android:color/white"
+	        app:tabSelectedTextColor="@android:color/white"/>
+
+	    <android.support.v4.view.ViewPager
+	        xmlns:android="http://schemas.android.com/apk/res/android"
+	        android:id="@+id/pager"
+	        android:layout_width="match_parent"
+	        android:layout_height="0dp"
+	        android:layout_alignParentTop="true"/>
+
+	</RelativeLayout>
+
+Both the main ViewPager and the tab bar are kept inside a RelativeLayout, aligned with the top and bottom of the parent respectively but added in the opposite order. This matters because the order of the Views in a RelativeLayout is the order in which they are drawn. Given that, we simply need to listen for layout changes and adjust the height of the ViewPager accordingly, so that is takes up either "all the available space" or "all the available space minus the height of the tab bar" depending on what's available.
+
+	public class MainActivity extends AppCompatActivity {
+
+	  ViewPager viewPager;
+	  TabLayout tabLayout;
+	  ViewPagerAdapter viewPagerAdapter;
+
+	  private View rootView;
+	  private int maxViewSize;
+	  private int previousHeight;
+
+	  @Override
+	  protected void onCreate(Bundle savedInstanceState) {
+	    super.onCreate(savedInstanceState);
+	    setContentView(R.layout.alt_activity_main);
+
+	    viewPager = (ViewPager) findViewById(R.id.pager);
+	    tabLayout = (TabLayout) findViewById(R.id.tabs);
+	    viewPagerAdapter = new ViewPagerAdapter(getSupportFragmentManager());
+	    viewPager.setAdapter(viewPagerAdapter);
+	    tabLayout.setupWithViewPager(viewPager);
+
+	    rootView = findViewById(R.id.activity_main);
+	    // assumes no keyboard activity at start
+	    maxViewSize = rootView.getHeight();
+	    previousHeight = 0;
+
+	    rootView.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+	      @Override
+	      public void onLayoutChange(View view, int l, int t, int r, int b,
+	                                 int ol, int ot, int or, int ob) {
+	        Rect rect = new Rect();
+	        view.getWindowVisibleDisplayFrame(rect);
+
+	        TypedValue tv = new TypedValue();
+	        MainActivity.this.getTheme().resolveAttribute(
+	                android.R.attr.actionBarSize, tv, true);
+	        int actionBarHeight = getResources().getDimensionPixelSize(
+	                tv.resourceId);
+	        int currentHeight = rect.bottom - rect.top - actionBarHeight;
+
+	        if (currentHeight == previousHeight) {
+	          return; // prevent recursion when modifying LayoutParams
+	        }
+	        if (currentHeight > maxViewSize) {
+	          // recover if we didn't get the right window size the first time
+	          // (eg. keyboard up, view.getHeight() = 0 on first pass, etc.)
+	          maxViewSize = currentHeight;
+	        }
+
+	        int maxPagerHeight = maxViewSize - tabLayout.getHeight();
+
+	        ViewGroup.LayoutParams layoutParams = viewPager.getLayoutParams();
+	        if (currentHeight < maxPagerHeight){
+	          layoutParams.height = currentHeight;
+	        }
+	        else {
+	          layoutParams.height = currentHeight - tabLayout.getHeight();
+	        }
+	        viewPager.setLayoutParams(layoutParams);
+	        previousHeight = currentHeight;
+	      }
+	    });
+	  }
+
+	  ...more code here...
+	}
+
+The tab bar will hide itself under the ViewPager if it does not have enough space, avoiding the visual hiccup of removing it and waiting for the ViewPager to readjust. 
+
+{:refdef: style="text-align: center;"}
+![RelativeLayout Method](/assets/20170122/hack1.gif){:class="image-group-small"}
+![RelativeLayout Keyboard Up](/assets/20170122/hackscreenup.gif){:class="image-group-small"}
+![RelativeLayout Keyboard Down](/assets/20170122/hackscreendown.gif){:class="image-group-small"}
+{:refdef}
+
+A couple notes:
+ - Setting layoutParams inside onLayoutChange actually forces Android to run a second layout pass, which created some warning logging but otherwise works as long as you **only call setLayoutParams when the layout actually changes**.
+ - The `actionBarHeight` variable can be omitted if there is no ActionBar. 
+ - `windowSoftInputMode` for this activity MUST be set to `adjustResize|stateHidden` so that the keyboard is down when the activity is created.
+
+I've tested this method on a handful of different devices and it seems to work. Not all Android devices were consistent about how they measure the screen but `getWindowVisibleDisplayFrame` worked everywhere. That said, there are enough things that can go wrong here that you should probably use `adjustNothing` if at all possible.
