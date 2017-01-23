@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Killing Me Softly with Keyboard Input"
-date:   2017-01-21 7:00:00
+date:   2017-01-22 16:00:00
 ---
 
 I am, for the most part, not here to get into unwinnable debates. Some decisions are kind of arbitrary. Sometimes you go along with convention because that's what is familiar. Sometimes you just have to forge your own path. So I am not going to spend time justfying why I put the tab bar on the bottom of an Android app instead of the top. Suffice to say, I wanted to do it and I did it and so can you.
