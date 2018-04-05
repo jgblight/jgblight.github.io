@@ -29,7 +29,7 @@ So the official way to customize any keyboard-related behaviour is by setting `w
 ![adjustResize](/assets/20170122/adjustResize2.gif){:class="image-group-small"}
 {:refdef}
 
-`adjustPan`: This keeps everything the same size and pans the layout so that the focused element is somewhere above the keyboard. This will probably hide the tab bar; it will probably hide other parts of your layout as well. You may not want to have those parts of your layout hidden depending on what they are, in which case this is not optimal. 
+`adjustPan`: This keeps everything the same size and pans the layout so that the focused element is somewhere above the keyboard. This will probably hide the tab bar; it will probably hide other parts of your layout as well. You may not want to have those parts of your layout hidden depending on what they are, in which case this is not optimal.
 
 {:refdef: style="text-align: center;"}
 ![adjustPan](/assets/20170122/adjustPan1.gif){:class="image-group-small"}
@@ -156,7 +156,7 @@ Both the main ViewPager and the tab bar are kept inside a RelativeLayout, aligne
 	  ...more code here...
 	}
 
-The tab bar will hide itself under the ViewPager if it does not have enough space, avoiding the visual hiccup of removing it and waiting for the ViewPager to readjust. 
+The tab bar will hide itself under the ViewPager if it does not have enough space, avoiding the visual hiccup of removing it and waiting for the ViewPager to readjust.
 
 {:refdef: style="text-align: center;"}
 ![RelativeLayout Method](/assets/20170122/hack1.gif){:class="image-group-small"}
@@ -166,7 +166,7 @@ The tab bar will hide itself under the ViewPager if it does not have enough spac
 
 A couple notes:
  - Setting layoutParams inside onLayoutChange actually forces Android to run a second layout pass, which created some warning logging but otherwise works as long as you **only call setLayoutParams when the layout actually changes**.
- - The `actionBarHeight` variable can be omitted if there is no ActionBar. 
+ - The `actionBarHeight` variable can be omitted if there is no ActionBar.
  - `windowSoftInputMode` for this activity MUST be set to `adjustResize|stateHidden` so that the keyboard is down when the activity is created.
 
 I've tested this method on a handful of different devices and it seems to work. Not all Android devices were consistent about how they measure the screen but `getWindowVisibleDisplayFrame` worked everywhere. That said, there are enough things that can go wrong here that you should probably use `adjustNothing` if at all possible.
