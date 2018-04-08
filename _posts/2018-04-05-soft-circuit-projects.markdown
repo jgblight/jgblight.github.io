@@ -29,109 +29,111 @@ These LEDs were serially addressable and could be connected using conductive thr
 With the lights working, I was also able to add an accelerometer, the result was subtle but the lights would speed up the faster Shalue was moving.
 
 ### Code
-    #include <Wire.h>
-    #include <SPI.h>
-    #include <Adafruit_LSM9DS0.h>
-    #include <Adafruit_Sensor.h>
+```c
+#include <Wire.h>
+#include <SPI.h>
+#include <Adafruit_LSM9DS0.h>
+#include <Adafruit_Sensor.h>
 
-    #include <FastLED.h>
-    #define NUM_LEDS 10
-    #define NUM_LEDS2 30
-    #define MOVE_THRESHOLD 500
+#include <FastLED.h>
+#define NUM_LEDS 10
+#define NUM_LEDS2 30
+#define MOVE_THRESHOLD 500
 
-    CRGB leds[NUM_LEDS];
-    CRGB leds2[NUM_LEDS2];
-    Adafruit_LSM9DS0 lsm = Adafruit_LSM9DS0();
-    uint8_t start_brightness;
-    uint8_t brightness;
-    uint8_t cos_brightness;
-    double delta[10];
-    double storedVector;
-    int delta_i;
-    int light_speed;
-    int switch_state = 0;
-    int last_switch_state = 0;
+CRGB leds[NUM_LEDS];
+CRGB leds2[NUM_LEDS2];
+Adafruit_LSM9DS0 lsm = Adafruit_LSM9DS0();
+uint8_t start_brightness;
+uint8_t brightness;
+uint8_t cos_brightness;
+double delta[10];
+double storedVector;
+int delta_i;
+int light_speed;
+int switch_state = 0;
+int last_switch_state = 0;
 
-    void setup() {
-      Serial.begin(9600);
-      pinMode(0, INPUT);
+void setup() {
+  Serial.begin(9600);
+  pinMode(0, INPUT);
 
-      if (!lsm.begin())
-      {
-        Serial.println("Oops ... unable to initialize the LSM9DS0. Check your wiring!");
-        while (1);
-      }
-      lsm.setupAccel(lsm.LSM9DS0_ACCELRANGE_2G);
-      lsm.setupMag(lsm.LSM9DS0_MAGGAIN_2GAUSS);
-      lsm.setupGyro(lsm.LSM9DS0_GYROSCALE_245DPS);
-      FastLED.addLeds<NEOPIXEL, 6>(leds, NUM_LEDS);
-      FastLED.addLeds<NEOPIXEL, 12>(leds2, NUM_LEDS2);
+  if (!lsm.begin())
+  {
+    Serial.println("Oops ... unable to initialize the LSM9DS0. Check your wiring!");
+    while (1);
+  }
+  lsm.setupAccel(lsm.LSM9DS0_ACCELRANGE_2G);
+  lsm.setupMag(lsm.LSM9DS0_MAGGAIN_2GAUSS);
+  lsm.setupGyro(lsm.LSM9DS0_GYROSCALE_245DPS);
+  FastLED.addLeds<NEOPIXEL, 6>(leds, NUM_LEDS);
+  FastLED.addLeds<NEOPIXEL, 12>(leds2, NUM_LEDS2);
 
-      delta_i = 0;
-       for (int i = 0; i < 10; i++) {
-        delta[i] = 0;
-      }
-      start_brightness = 0;
+  delta_i = 0;
+   for (int i = 0; i < 10; i++) {
+    delta[i] = 0;
+  }
+  start_brightness = 0;
 
-      lsm.read();
-      storedVector = lsm.accelData.x*lsm.accelData.x;
-      storedVector += lsm.accelData.y*lsm.accelData.y;
-      storedVector += lsm.accelData.z*lsm.accelData.z;
-      storedVector = sqrt(storedVector);
+  lsm.read();
+  storedVector = lsm.accelData.x*lsm.accelData.x;
+  storedVector += lsm.accelData.y*lsm.accelData.y;
+  storedVector += lsm.accelData.z*lsm.accelData.z;
+  storedVector = sqrt(storedVector);
+}
+
+void loop() {
+  // get new data!
+  last_switch_state = switch_state;
+  switch_state = digitalRead(0);
+  Serial.println(switch_state);
+
+  if (switch_state) {
+    lsm.read();
+    double newVector = lsm.accelData.x*lsm.accelData.x;
+    newVector += lsm.accelData.y*lsm.accelData.y;
+    newVector += lsm.accelData.z*lsm.accelData.z;
+    newVector = sqrt(newVector);
+
+    delta[delta_i] = abs(newVector - storedVector);
+    //Serial.println(delta[delta_i]);
+    delta_i = (delta_i + 1) % 10;
+
+    double average_delta = 0;
+    for (int i = 0; i < 10; i++) {
+      average_delta += delta[i];
     }
 
-    void loop() {
-      // get new data!
-      last_switch_state = switch_state;
-      switch_state = digitalRead(0);
-      Serial.println(switch_state);
+    storedVector = newVector;
 
-      if (switch_state) {
-        lsm.read();
-        double newVector = lsm.accelData.x*lsm.accelData.x;
-        newVector += lsm.accelData.y*lsm.accelData.y;
-        newVector += lsm.accelData.z*lsm.accelData.z;
-        newVector = sqrt(newVector);
-
-        delta[delta_i] = abs(newVector - storedVector);
-        //Serial.println(delta[delta_i]);
-        delta_i = (delta_i + 1) % 10;
-
-        double average_delta = 0;
-        for (int i = 0; i < 10; i++) {
-          average_delta += delta[i];
-        }
-
-        storedVector = newVector;
-
-        brightness = start_brightness;
-        for(int i = 0; i < NUM_LEDS; i++) {
-          cos_brightness = cos8(brightness);
-          leds[i] = CHSV(150,150, cos_brightness > 75 ? cos_brightness : 0);
-          brightness = (brightness + 25) % 255;
-        }
-        brightness = start_brightness;
-        for(int i = 0; i < NUM_LEDS2; i++) {
-          cos_brightness = cos8(brightness);
-          leds2[i] = CHSV(150,150, cos_brightness > 75 ? cos_brightness : 0);
-          brightness = (brightness + 8) % 255;
-        }
-        FastLED.show();
-        light_speed = (average_delta / 1000) * 1;
-        start_brightness = (start_brightness + (light_speed > 5 ? light_speed : 5)) % 255;
-
-      } else {
-         for(int i = 0; i < NUM_LEDS; i++) {
-          leds[i] = CHSV(0,0,0);
-        }
-        for(int i = 0; i < NUM_LEDS2; i++) {
-          leds2[i] = CHSV(0,0,0);
-        }
-        FastLED.show();
-      }
-
-      delay(30);
+    brightness = start_brightness;
+    for(int i = 0; i < NUM_LEDS; i++) {
+      cos_brightness = cos8(brightness);
+      leds[i] = CHSV(150,150, cos_brightness > 75 ? cos_brightness : 0);
+      brightness = (brightness + 25) % 255;
     }
+    brightness = start_brightness;
+    for(int i = 0; i < NUM_LEDS2; i++) {
+      cos_brightness = cos8(brightness);
+      leds2[i] = CHSV(150,150, cos_brightness > 75 ? cos_brightness : 0);
+      brightness = (brightness + 8) % 255;
+    }
+    FastLED.show();
+    light_speed = (average_delta / 1000) * 1;
+    start_brightness = (start_brightness + (light_speed > 5 ? light_speed : 5)) % 255;
+
+  } else {
+     for(int i = 0; i < NUM_LEDS; i++) {
+      leds[i] = CHSV(0,0,0);
+    }
+    for(int i = 0; i < NUM_LEDS2; i++) {
+      leds2[i] = CHSV(0,0,0);
+    }
+    FastLED.show();
+  }
+
+  delay(30);
+}
+```
 
 Back to hiding the LEDs. We had _very carefully_ removed a bunch of gems from the skirt in order to make space for the lights. I was able to print a hollowed out version of these gems using clear filament and sew them over the LEDs. You could still see the chips through the gems, but the illusion was mostly seamless it you weren't looking too closely.
 

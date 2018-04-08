@@ -10,9 +10,9 @@ Some friends and I attended a certain gathering in the desert recently and one o
 
 The reed switch itself was dead simple. It consists of two magnets to be installed on either side of the door. The switch is off when the magnets are within half an inch or so of each other and on when they move farther apart. It connects to a pin on the Arduino. Dead. Simple.
 
-The audio was also simple. I bought an MP3 player shield from Sparkfun, being fairly confident that it would do everything I needed and then some. Namely, it takes an SD card full of audio files, it accepts a standard audio jack, and it has a simple library associated with it. The jack was especially important to me because I definitely did not have time to [mess around with DIY speakers again]({{site.url}}/2015/10/10/i-made-speakers.html). 
+The audio was also simple. I bought an MP3 player shield from Sparkfun, being fairly confident that it would do everything I needed and then some. Namely, it takes an SD card full of audio files, it accepts a standard audio jack, and it has a simple library associated with it. The jack was especially important to me because I definitely did not have time to [mess around with DIY speakers again]({{site.url}}/2015/10/10/i-made-speakers.html).
 
-Weird caveat with the audio jack, though: because the shield is designed to work with headphones out of the box, the reference voltage on the audio jack is not actually ground. [Sparkfun has a guide](https://learn.sparkfun.com/tutorials/mp3-player-shield-hookup-guide-v15) that explains this in greater detail, but the gist is: 
+Weird caveat with the audio jack, though: because the shield is designed to work with headphones out of the box, the reference voltage on the audio jack is not actually ground. [Sparkfun has a guide](https://learn.sparkfun.com/tutorials/mp3-player-shield-hookup-guide-v15) that explains this in greater detail, but the gist is:
   - It works fine for headphones
   - It works fine for external speakers as long as they're self-powered
   - Messing around with DIY speakers now involves slightly more messing around
@@ -28,69 +28,71 @@ Then, there was the issue of power. The nature of desert camping meant that I wo
 
 The full code is below. The reed switch is on pin 5 and the relay is on pin 10. On each loop we check if the door has just opened and, if so, select a random file and play it.
 
-	#include <SPI.h>
-	#include <SdFat.h>
-	#include <SdFatUtil.h> 
-	#include <SFEMP3Shield.h>
+```c
+#include <SPI.h>
+#include <SdFat.h>
+#include <SdFatUtil.h>
+#include <SFEMP3Shield.h>
 
-	SdFat sd;
-	SFEMP3Shield MP3player;
-	uint16_t fileCount;
-	int previousDoor;
-	int door;
+SdFat sd;
+SFEMP3Shield MP3player;
+uint16_t fileCount;
+int previousDoor;
+int door;
 
-	void setup() {
+void setup() {
 
-	  randomSeed(analogRead(0));
-	  pinMode(5, INPUT_PULLUP);
-	  pinMode(10, OUTPUT);
+  randomSeed(analogRead(0));
+  pinMode(5, INPUT_PULLUP);
+  pinMode(10, OUTPUT);
 
-	  digitalWrite(10, LOW);
+  digitalWrite(10, LOW);
 
-	  //start the shield
-	  sd.begin(SD_SEL, SPI_FULL_SPEED);
+  //start the shield
+  sd.begin(SD_SEL, SPI_FULL_SPEED);
 
-	  //count files
-	  SdFile file;
-	  char filename[13];
-	  sd.chdir("/",true);
-	  fileCount = 1;
-	  while (file.openNext(sd.vwd(),O_READ))
-	  {
-	    file.getFilename(filename);
-	    if ( isFnMusic(filename) ) {
-	      fileCount++;
-	    }
-	    file.close();
-	  }
+  //count files
+  SdFile file;
+  char filename[13];
+  sd.chdir("/",true);
+  fileCount = 1;
+  while (file.openNext(sd.vwd(),O_READ))
+  {
+    file.getFilename(filename);
+    if ( isFnMusic(filename) ) {
+      fileCount++;
+    }
+    file.close();
+  }
 
-	  
-	  MP3player.begin();
-	  MP3player.setVolume(0,0); //loudest
 
-	  previousDoor = 0;
-	  door = 0;
-	}
+  MP3player.begin();
+  MP3player.setVolume(0,0); //loudest
 
-	void loop() {
+  previousDoor = 0;
+  door = 0;
+}
 
-	  door = digitalRead(5);
+void loop() {
 
-	  if (door == HIGH and previousDoor == LOW and !MP3player.isPlaying()){
-	    long randomSong = random(1, fileCount);
-	    digitalWrite(10, HIGH);
-	    delay(20);
-	    MP3player.playTrack(randomSong);
-	    while (MP3player.isPlaying()) {
-	      delay(100);
-	    }
-	    digitalWrite(10, LOW);
-	  }
+  door = digitalRead(5);
 
-	  previousDoor = door;
-	  delay(200);
+  if (door == HIGH and previousDoor == LOW and !MP3player.isPlaying()){
+    long randomSong = random(1, fileCount);
+    digitalWrite(10, HIGH);
+    delay(20);
+    MP3player.playTrack(randomSong);
+    while (MP3player.isPlaying()) {
+      delay(100);
+    }
+    digitalWrite(10, LOW);
+  }
 
-	}
+  previousDoor = door;
+  delay(200);
+
+}
+```
 
 To protect them from the elements, most of the components were stored in plastic pencil cases, which were screwed directly to the door frame.
 

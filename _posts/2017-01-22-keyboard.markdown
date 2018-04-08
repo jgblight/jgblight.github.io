@@ -89,72 +89,74 @@ My eventual solution relies on the equivalent of a CSS hack. The layout for the 
 
 Both the main ViewPager and the tab bar are kept inside a RelativeLayout, aligned with the top and bottom of the parent respectively but added in the opposite order. This matters because the order of the Views in a RelativeLayout is the order in which they are drawn. Given that, we simply need to listen for layout changes and adjust the height of the ViewPager accordingly, so that is takes up either "all the available space" or "all the available space minus the height of the tab bar" depending on what's available.
 
-	public class MainActivity extends AppCompatActivity {
+```java
+public class MainActivity extends AppCompatActivity {
 
-	  ViewPager viewPager;
-	  TabLayout tabLayout;
-	  ViewPagerAdapter viewPagerAdapter;
+  ViewPager viewPager;
+  TabLayout tabLayout;
+  ViewPagerAdapter viewPagerAdapter;
 
-	  private View rootView;
-	  private int maxViewSize;
-	  private int previousHeight;
+  private View rootView;
+  private int maxViewSize;
+  private int previousHeight;
 
-	  @Override
-	  protected void onCreate(Bundle savedInstanceState) {
-	    super.onCreate(savedInstanceState);
-	    setContentView(R.layout.alt_activity_main);
+  @Override
+  protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.alt_activity_main);
 
-	    viewPager = (ViewPager) findViewById(R.id.pager);
-	    tabLayout = (TabLayout) findViewById(R.id.tabs);
-	    viewPagerAdapter = new ViewPagerAdapter(getSupportFragmentManager());
-	    viewPager.setAdapter(viewPagerAdapter);
-	    tabLayout.setupWithViewPager(viewPager);
+    viewPager = (ViewPager) findViewById(R.id.pager);
+    tabLayout = (TabLayout) findViewById(R.id.tabs);
+    viewPagerAdapter = new ViewPagerAdapter(getSupportFragmentManager());
+    viewPager.setAdapter(viewPagerAdapter);
+    tabLayout.setupWithViewPager(viewPager);
 
-	    rootView = findViewById(R.id.activity_main);
-	    // assumes no keyboard activity at start
-	    maxViewSize = rootView.getHeight();
-	    previousHeight = 0;
+    rootView = findViewById(R.id.activity_main);
+    // assumes no keyboard activity at start
+    maxViewSize = rootView.getHeight();
+    previousHeight = 0;
 
-	    rootView.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
-	      @Override
-	      public void onLayoutChange(View view, int l, int t, int r, int b,
-	                                 int ol, int ot, int or, int ob) {
-	        Rect rect = new Rect();
-	        view.getWindowVisibleDisplayFrame(rect);
+    rootView.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+      @Override
+      public void onLayoutChange(View view, int l, int t, int r, int b,
+                                 int ol, int ot, int or, int ob) {
+        Rect rect = new Rect();
+        view.getWindowVisibleDisplayFrame(rect);
 
-	        TypedValue tv = new TypedValue();
-	        MainActivity.this.getTheme().resolveAttribute(
-	                android.R.attr.actionBarSize, tv, true);
-	        int actionBarHeight = getResources().getDimensionPixelSize(
-	                tv.resourceId);
-	        int currentHeight = rect.bottom - rect.top - actionBarHeight;
+        TypedValue tv = new TypedValue();
+        MainActivity.this.getTheme().resolveAttribute(
+                android.R.attr.actionBarSize, tv, true);
+        int actionBarHeight = getResources().getDimensionPixelSize(
+                tv.resourceId);
+        int currentHeight = rect.bottom - rect.top - actionBarHeight;
 
-	        if (currentHeight == previousHeight) {
-	          return; // prevent recursion when modifying LayoutParams
-	        }
-	        if (currentHeight > maxViewSize) {
-	          // recover if we didn't get the right window size the first time
-	          // (eg. keyboard up, view.getHeight() = 0 on first pass, etc.)
-	          maxViewSize = currentHeight;
-	        }
+        if (currentHeight == previousHeight) {
+          return; // prevent recursion when modifying LayoutParams
+        }
+        if (currentHeight > maxViewSize) {
+          // recover if we didn't get the right window size the first time
+          // (eg. keyboard up, view.getHeight() = 0 on first pass, etc.)
+          maxViewSize = currentHeight;
+        }
 
-	        int maxPagerHeight = maxViewSize - tabLayout.getHeight();
+        int maxPagerHeight = maxViewSize - tabLayout.getHeight();
 
-	        ViewGroup.LayoutParams layoutParams = viewPager.getLayoutParams();
-	        if (currentHeight < maxPagerHeight){
-	          layoutParams.height = currentHeight;
-	        }
-	        else {
-	          layoutParams.height = currentHeight - tabLayout.getHeight();
-	        }
-	        viewPager.setLayoutParams(layoutParams);
-	        previousHeight = currentHeight;
-	      }
-	    });
-	  }
+        ViewGroup.LayoutParams layoutParams = viewPager.getLayoutParams();
+        if (currentHeight < maxPagerHeight){
+          layoutParams.height = currentHeight;
+        }
+        else {
+          layoutParams.height = currentHeight - tabLayout.getHeight();
+        }
+        viewPager.setLayoutParams(layoutParams);
+        previousHeight = currentHeight;
+      }
+    });
+  }
 
-	  ...more code here...
-	}
+  ...more code here...
+}
+```
 
 The tab bar will hide itself under the ViewPager if it does not have enough space, avoiding the visual hiccup of removing it and waiting for the ViewPager to readjust.
 

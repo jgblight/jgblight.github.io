@@ -4,7 +4,7 @@ title:  "A Dress That Wants to Dance"
 date:   2016-03-13 22:00:00
 ---
 
-I found some conductive fabric in a drawer one day and started thinking about using it in a sewing project. The (eventual) result was a dress with hidden capacitive sensors and Arduino-controlled LEDs. 
+I found some conductive fabric in a drawer one day and started thinking about using it in a sewing project. The (eventual) result was a dress with hidden capacitive sensors and Arduino-controlled LEDs.
 
 <!--more-->
 
@@ -21,6 +21,7 @@ Once the dress was finished, I could start working on the circuit. The whole thi
 
 The code is fairly simple. I'm making use of two very useful libraries: FastLED and CapactiveSensor. CapacitiveSensor takes two connected pins, toggles the output of one pin and records the time it takes to receive the same signal from the other pin; a longer wait indicates higher capacitance across the two pins. In this sketch, if any of the sensors are above a threshold, we animate a random set of LEDs. The threshold is set so that the sensors should only respond to direct contact and not to the person currently wearing the dress. (This can be finicky)
 
+```c
 	#include <FastLED.h>
 	#include <CapacitiveSensor.h>
 	#define NUM_LEDS 100
@@ -33,7 +34,7 @@ The code is fairly simple. I'm making use of two very useful libraries: FastLED 
 	CapacitiveSensor shoulder_right = CapacitiveSensor(9,8);
 	CapacitiveSensor waist_right = CapacitiveSensor(6,7);
 
-	void setup() { 
+	void setup() {
 	  FastLED.addLeds<NEOPIXEL, 3>(leds, NUM_LEDS);
 	}
 
@@ -48,7 +49,7 @@ The code is fairly simple. I'm making use of two very useful libraries: FastLED 
 	  long cap2 = 0;
 	  long cap3 = 0;
 	  long cap4 = 0;
-	  
+
 	  for (int i=0; i<RANDOM_LEDS; i++){
 	    fadeIn[i] = random(0, NUM_LEDS);
 	  }
@@ -59,7 +60,7 @@ The code is fairly simple. I'm making use of two very useful libraries: FastLED 
 	    cap3 =  shoulder_right.capacitiveSensor(30);
 	    cap4 =  waist_right.capacitiveSensor(30);
 	    loop_counter++;
-	    
+
 	    if (cap1 > THRESHOLD  || cap2 > THRESHOLD || cap3 > THRESHOLD || cap4 > THRESHOLD){
 	      angle = angle + 8;
 	      for (int i=0; i<RANDOM_LEDS; i++){
@@ -87,6 +88,7 @@ The code is fairly simple. I'm making use of two very useful libraries: FastLED 
 	     waist_right.reset_CS_AutoCal();  
 	  }
 	}
+```
 
 The power supply lives in a pouch on the wearer's leg. This particular piece was made in a rush (I was trying to finish in time for an event) and uses a battery behind a basic 5V regulator. A card tin holds the components and serves as a much-needed heat sink. At some point I plan to replace the existing regulator with a high-efficiency version.
 
