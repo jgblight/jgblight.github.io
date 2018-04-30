@@ -1,10 +1,10 @@
 ---
 layout: post
 title:  "The AccelLehenga"
-date:   2017-04-05 00:00:00
+date:   2017-04-30 00:00:00
 ---
 
-![Shalue wearing the AccelLehenga](/assets/20180405/shalue.jpg)
+![Shalue wearing the AccelLehenga](/assets/20180430/shalue.jpg)
 
 This is my friend Shalue. Shalue is super cool. Shalue deserves a super cool wedding. For Shalue's wedding, I constructed the AccelLehenga.
 
@@ -14,15 +14,15 @@ The plan was simple. Chris and Shalue would provide me with a lehenga that she p
 
 One problem: this thing was embroidered, very embroidered. Every inch of the skirt was covered in heavy decoration. Sewable electronics are cool but they're not particularly attractive. Previously, I had hidden everything under sheer fabric but that wasn't going to work here; any LEDs I wanted to add had to be hidden somewhere on the surface without disrupting the existing decoration too much. Most existing sewable LED components were too big for this, so I ended up buying individual surface-mount LEDs and soldering loops onto them so I could sew them to the skirt.
 
-![Tiny Neopixel LEDs](/assets/20180405/soldered_leds.jpg)
+![Tiny Neopixel LEDs](/assets/20180430/soldered_leds.jpg)
 
 I made about 50 of these.
 
 These LEDs were serially addressable and could be connected using conductive thread and controlled with the FastLED library. I used conductive ribbon for the power and ground lines so that I could run longer strings of LEDs without losing brightness. For this project, I also used the Adafruit FLORA rather than the Lilypad Arduino as it has some more convenient connectors, namely a JST battery connector and a USB port. The whole thing ran on a Lipo battery pack that sat in a pocket in the skirt's petticoat. We had the swap out the battery once during the party.
 
 {:refdef: style="text-align: center;"}
-![Lehenga in progress](/assets/20180405/lehenga_skirt.jpg){:class="image-group-small"}
-![Lehenga in progress](/assets/20180405/skirt_animation.gif){:class="image-group-small"}
+![Lehenga in progress](/assets/20180430/lehenga_skirt.jpg){:class="image-group-small"}
+![Lehenga in progress](/assets/20180430/skirt_animation.gif){:class="image-group-small"}
 {:refdef}
 
 
@@ -137,14 +137,14 @@ void loop() {
 
 Back to hiding the LEDs. We had _very carefully_ removed a bunch of gems from the skirt in order to make space for the lights. I was able to print a hollowed out version of these gems using clear filament and sew them over the LEDs. You could still see the chips through the gems, but the illusion was mostly seamless it you weren't looking too closely.
 
-![Printed Gems](/assets/20180405/printed_gems.jpg)
+![Printed Gems](/assets/20180430/printed_gems.jpg)
 
 Shalue was happy, which makes me happy. There were some glitches the day of the reception, which like all Arduino problems were mostly solved by pressing the reset button. I may or may not have followed 15 feet behind her for the whole night just to make sure the thing was still working.
 
-![Artsy Photo](/assets/20180405/shalue_2.jpg)
+![Dancing at the Wedding](/assets/20180430/dancing.gif)
 
 #### Bonus: A Vagabond Jacket
 
 Shortly after finishing the AccelLehenga, I used a similar process to make a much simpler piece for myself. This one borrows [Shisha embroidery](https://en.wikipedia.org/wiki/Shisha_(embroidery)) techniques to disguise the LEDs.
 
-![Jacket Animation](/assets/20180405/jacket_animation.gif)
+![Jacket Animation](/assets/20180430/jacket_animation.gif)
