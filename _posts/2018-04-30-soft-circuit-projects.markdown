@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "The AccelLehenga"
-date:   2017-04-30 00:00:00
+date:   2018-04-30 00:00:00
 ---
 
 ![Shalue wearing the AccelLehenga](/assets/20180430/shalue.jpg)
